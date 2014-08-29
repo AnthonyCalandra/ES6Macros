@@ -19,4 +19,4 @@ Currently the following ES6 syntax is implemented:
 
 Reference
 =========
-I am following the new ES6 features (here)[https://github.com/lukehoban/es6features] and (here)[http://tc39wiki.calculist.org/es6/].
+I am following the new ES6 features [here](https://github.com/lukehoban/es6features) and [here](http://tc39wiki.calculist.org/es6/).
