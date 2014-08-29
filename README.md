@@ -15,3 +15,8 @@ What's Available
 Currently the following ES6 syntax is implemented:
 - Arrow functions
 - Classes
+- Object literals (Experimental -- does not fully work properly since sweet.js doesn't fire callback functions for manipulating delimiters including braces.)
+
+Reference
+=========
+I am following the new ES6 features (here)[https://github.com/lukehoban/es6features] and (here)[http://tc39wiki.calculist.org/es6/].
