@@ -1,15 +1,31 @@
 macro ismethod {
   // ES6 allows semicolon at the end of method definitions.
-  rule { static $methodName($param:ident (,) ...) { $methodBody ... }; }
-  rule { static $methodName($param:ident (,) ...) { $methodBody ... } }
-  rule { $methodName($param:ident (,) ...) { $methodBody ... }; }
-  rule { $methodName($param:ident (,) ...) { $methodBody ... } }
+  rule {
+    static $methodName($param:ident (,) ...) {
+        $methodBody ...
+    };
+  }
+  rule {
+    static $methodName($param:ident (,) ...) {
+        $methodBody ...
+    }
+  }
+  rule {
+    $methodName($param:ident (,) ...) {
+        $methodBody ...
+    };
+  }
+  rule {
+    $methodName($param:ident (,) ...) {
+        $methodBody ...
+    }
+  }
 }
 
 // All these ugly Object.getPrototypeOf(Object.getPrototypeOf(this)) calls
 // are great for macros since they don't require defining object properties just
 // for accessing the parent.
-macro super {
+let super = macro {
   rule { ($arg (,) ...) } => {
     Object.getPrototypeOf(Object.getPrototypeOf(this)).constructor.apply(this, [$arg (,) ...])
   }
@@ -19,6 +35,8 @@ macro super {
   rule { .$prop } => {
     Object.getPrototypeOf(Object.getPrototypeOf(this)).$prop
   }
+  // Prevents unexpected side-effects due to exporting a reserved keyword.
+  rule {} => { super }
 }
 
 macro defaultconstructor {
