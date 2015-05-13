@@ -32,9 +32,11 @@ macro iterateprops {
       configurable: true
     }
   }
+
   rule { __proto__ $[:] $val } => {
     __proto__: $val
   }
+
   rule { $key $[:] $val } => {
     $key: {
       value: $val,
@@ -43,6 +45,7 @@ macro iterateprops {
       configurable: true
     }
   }
+
   rule { $ident:ident } => {
     $ident: {
       value: $ident,
@@ -60,9 +63,11 @@ macro super {
   rule { ($arg (,) ...) } => {
     Object.getPrototypeOf(this).constructor.apply(this, [$arg (,) ...])
   }
+
   rule { .$methodName($arg (,) ...) } => {
     Object.getPrototypeOf(this).$methodName.apply(this, [$arg (,) ...])
   }
+  
   rule { .$prop } => {
     Object.getPrototypeOf(this).$prop
   }
