@@ -13,9 +13,12 @@ Sweet.js will generate some pretty ugly identifiers so if this is a problem for 
 What's Available
 ===============
 Currently the following ES6 syntax is implemented:
+- Default parameters
 - Arrow functions
 - Classes
 - Object literals (Experimental -- does not fully work properly since sweet.js doesn't fire callback functions for manipulating delimiters including braces.)
+
+You can find my blog article which discusses the process of adding new features in-depth [here](http://anthony-calandra.com/posts/Implementing-ES6-Features-in-ES5-using-Macros-2).
 
 Reference
 =========
