@@ -1,14 +1,14 @@
 let function = macro {
-  rule { ( $param:ident (,) ... $($defparam:ident = $defval) (,) ...) { $body ... } } => {
-    (function($param (,) ... $defparam (,) ...) {
-      $($defparam = (typeof $defparam === "undefined") ? $defval : $defparam) (;) ...
+  rule { ($param:ident (,) ... $($defaultParam:ident = $defaultVal) (,) ...) { $body ... } } => {
+    (function($param (,) ... $defaultParam (,) ...) {
+      $($defaultParam = (typeof $defaultParam === "undefined") ? $defaultVal : $defaultParam) (;) ...
       $body ...
     })
   }
 
-  rule { $name( $param:ident (,) ... $($defparam:ident = $defval) (,) ...) { $body ... } } => {
-    function $name($param (,) ... $defparam (,) ...) {
-      $($defparam = (typeof $defparam === "undefined") ? $defval : $defparam) (;) ...
+  rule { $name($param:ident (,) ... $($defaultParam:ident = $defaultVal) (,) ...) { $body ... } } => {
+    function $name($param (,) ... $defaultParam (,) ...) {
+      $($defaultParam = (typeof $defaultParam === "undefined") ? $defaultVal : $defaultParam) (;) ...
       $body ...
     }
   }

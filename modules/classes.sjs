@@ -1,4 +1,4 @@
-macro ismethod {
+macro is_method {
   // ES6 allows semicolon at the end of method definitions.
   rule {
     static $methodName($param:ident (,) ...) {
@@ -83,18 +83,18 @@ macro defaultconstructor {
 }
 
 macro class {
-  rule { $className extends $extends { $method:ismethod ... } } => {
+  rule { $className extends $extends { $method:is_method ... } } => {
     methods $className, $extends, $method ...
   }
 
-  rule { $className { $method:ismethod ... } } => {
+  rule { $className { $method:is_method ... } } => {
     methods $className, $method ...
   }
 }
 
 // Iterate through the list of methods.
 macro methods {
-  rule { $className, $parentName, $method:ismethod ... } => {
+  rule { $className, $parentName, $method:is_method ... } => {
     // This is required for omitted constructors.
     defaultconstructor $className, $parentName
     $className.prototype = Object.create($parentName.prototype);
@@ -102,7 +102,7 @@ macro methods {
     $(method $className, $method) ...
   }
 
-  rule { $className, $method:ismethod ... } => {
+  rule { $className, $method:is_method ... } => {
     // This is required for omitted constructors.
     defaultconstructor $className
     $(method $className, $method) ...
@@ -127,7 +127,7 @@ macro method {
       };
     }
   }
-  
+
   case { _ $className, $methodName($methodParam:ident (,) ...) { $methodBody ... } } => {
     var methodName = unwrapSyntax(#{$methodName});
     // Is it the constructor?

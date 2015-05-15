@@ -1,18 +1,18 @@
 // Arrow-function syntax supports lexical 'this'.
 macro => {
-  rule infix { () | { $code ... } } => {
+  rule infix { () | { $body ... } } => {
     (function() {
-      $code ...
+      $body ...
     }).bind(this)
   }
 
-  rule infix { $x:ident | { $code ... } } => {
-    ($x) => { $code ... }
+  rule infix { $param:ident | { $body ... } } => {
+    ($param) => { $body ... }
   }
 
-  rule infix { ($x:ident (,) ...) | { $code ... } } => {
-    (function($x (,) ...) {
-      $code ...
+  rule infix { ($param:ident (,) ...) | { $body ... } } => {
+    (function($param (,) ...) {
+      $body ...
     }).bind(this)
   }
 
@@ -22,12 +22,12 @@ macro => {
     }).bind(this)
   }
 
-  rule infix { $x:ident | $expr:expr } => {
-    ($x) => $expr
+  rule infix { $param:ident | $expr:expr } => {
+    ($param) => $expr
   }
-  
-  rule infix { ($x:ident (,) ...) | $expr:expr } => {
-    (function($x (,) ...) {
+
+  rule infix { ($param:ident (,) ...) | $expr:expr } => {
+    (function($param (,) ...) {
       return $expr;
     }).bind(this)
   }
