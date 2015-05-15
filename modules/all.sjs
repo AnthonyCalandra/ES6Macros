@@ -1,18 +1,49 @@
+macro defparam {
+  rule {
+    $defaultParam:ident = $defaultVal
+  }
+}
+
+// Pattern class for the various forms of function parameters.
+macro is_param {
+  rule {
+    $param:defparam
+  }
+
+  rule {
+    $param:ident
+  }
+}
+
 // Arrow-function syntax supports lexical 'this'.
 macro => {
-  rule infix { () | { $code ... } } => {
+  rule infix { () | { $body ... } } => {
     (function() {
-      $code ...
+      $body ...
     }).bind(this)
   }
 
-  rule infix { $x:ident | { $code ... } } => {
-    ($x) => { $code ... }
+  rule infix { $param:ident | { $body ... } } => {
+    ($param) => { $body ... }
   }
 
-  rule infix { ($x:ident (,) ...) | { $code ... } } => {
-    (function($x (,) ...) {
-      $code ...
+  rule infix { ($defaultParam:ident = $defaultVal) | { $body ... } } => {
+    (function() {
+      $($defaultParam = (typeof $defaultParam === "undefined") ? $defaultVal : $defaultParam);
+      $body ...
+    }).bind(this)
+  }
+
+  rule infix { ($param:ident (,) ... $($defaultParam:ident = $defaultVal) (,) ...) | { $body ... } } => {
+    (function($param (,) ... $defaultParam (,) ...) {
+      $($defaultParam = (typeof $defaultParam === "undefined") ? $defaultVal : $defaultParam) (;) ...
+      $body ...
+    }).bind(this)
+  }
+
+  rule infix { ($param:ident (,) ...) | { $body ... } } => {
+    (function($param (,) ...) {
+      $body ...
     }).bind(this)
   }
 
@@ -22,63 +53,77 @@ macro => {
     }).bind(this)
   }
 
-  rule infix { $x:ident | $expr:expr } => {
-    ($x) => $expr
+  rule infix { ($defaultParam:ident = $defaultVal) | $expr:expr } => {
+    (function($defaultParam) {
+      $($defaultParam = (typeof $defaultParam === "undefined") ? $defaultVal : $defaultParam);
+      return $expr;
+    }).bind(this)
   }
 
-  rule infix { ($x:ident (,) ...) | $expr:expr } => {
-    (function($x (,) ...) {
+  rule infix { $param:ident | $expr:expr } => {
+    ($param) => $expr
+  }
+
+  rule infix { ($param:ident (,) ... $($defaultParam:ident = $defaultVal) (,) ...) | $expr:expr } => {
+    (function($param (,) ... $defaultParam (,) ...) {
+      $($defaultParam = (typeof $defaultParam === "undefined") ? $defaultVal : $defaultParam) (;) ...
+      return $expr;
+    }).bind(this)
+  }
+
+  rule infix { ($param:ident (,) ...) | $expr:expr } => {
+    (function($param (,) ...) {
       return $expr;
     }).bind(this)
   }
 }
 
-macro ismethod {
+macro is_method {
   // ES6 allows semicolon at the end of method definitions.
   rule {
-    static $methodName($param:ident (,) ...) {
+    static $methodName($param:is_param (,) ...) {
         $methodBody ...
     };
   }
 
   rule {
-    static $methodName($param:ident (,) ...) {
+    static $methodName($param:is_param (,) ...) {
         $methodBody ...
     }
   }
 
   rule {
-    get $methodName($param:ident (,) ...) {
+    get $methodName($param:is_param (,) ...) {
         $methodBody ...
     };
   }
 
   rule {
-    get $methodName($param:ident (,) ...) {
+    get $methodName($param:is_param (,) ...) {
         $methodBody ...
     }
   }
 
   rule {
-    set $methodName($param:ident (,) ...) {
+    set $methodName($param:is_param (,) ...) {
         $methodBody ...
     };
   }
 
   rule {
-    set $methodName($param:ident (,) ...) {
+    set $methodName($param:is_param (,) ...) {
         $methodBody ...
     }
   }
 
   rule {
-    $methodName($param:ident (,) ...) {
+    $methodName($param:is_param (,) ...) {
         $methodBody ...
     };
   }
 
   rule {
-    $methodName($param:ident (,) ...) {
+    $methodName($param:is_param (,) ...) {
         $methodBody ...
     }
   }
@@ -118,18 +163,18 @@ macro defaultconstructor {
 }
 
 macro class {
-  rule { $className extends $extends { $method:ismethod ... } } => {
+  rule { $className extends $extends { $method:is_method ... } } => {
     methods $className, $extends, $method ...
   }
 
-  rule { $className { $method:ismethod ... } } => {
+  rule { $className { $method:is_method ... } } => {
     methods $className, $method ...
   }
 }
 
 // Iterate through the list of methods.
 macro methods {
-  rule { $className, $parentName, $method:ismethod ... } => {
+  rule { $className, $parentName, $method:is_method ... } => {
     // This is required for omitted constructors.
     defaultconstructor $className, $parentName
     $className.prototype = Object.create($parentName.prototype);
@@ -137,7 +182,7 @@ macro methods {
     $(method $className, $method) ...
   }
 
-  rule { $className, $method:ismethod ... } => {
+  rule { $className, $method:is_method ... } => {
     // This is required for omitted constructors.
     defaultconstructor $className
     $(method $className, $method) ...
@@ -145,36 +190,40 @@ macro methods {
 }
 
 macro method {
-  case { _ $className, $accessModifier $methodName($methodParam:ident (,) ...) { $methodBody ... } } => {
+  case { _ $className, $accessModifier $methodName($methodParam:ident (,) ... $($defaultParam:ident = $defaultVal) (,) ...) { $methodBody ... } } => {
     var accessModifier = unwrapSyntax(#{$accessModifier});
     // Is it a static method?
     if (accessModifier === "static") {
       return #{
-        $className.$methodName = function($methodParam (,) ...) {
+        $className.$methodName = function($methodParam (,) ... $defaultParam (,) ...) {
+          $($defaultParam = (typeof $defaultParam === "undefined") ? $defaultVal : $defaultParam) (;) ...
           $methodBody ...
         };
       };
     } else { // 'get' and 'set'
       return #{
-        $className.prototype.$methodName = function($methodParam (,) ...) {
+        $className.prototype.$methodName = function($methodParam (,) ... $defaultParam (,) ...) {
+          $($defaultParam = (typeof $defaultParam === "undefined") ? $defaultVal : $defaultParam) (;) ...
           $methodBody ...
         };
       };
     }
   }
 
-  case { _ $className, $methodName($methodParam:ident (,) ...) { $methodBody ... } } => {
+  case { _ $className, $methodName($methodParam:ident (,) ... $($defaultParam:ident = $defaultVal) (,) ...) { $methodBody ... } } => {
     var methodName = unwrapSyntax(#{$methodName});
     // Is it the constructor?
     if (methodName === "constructor") {
       return #{
-        function $className($methodParam (,) ...) {
+        function $className($methodParam (,) ... $defaultParam (,) ...) {
+          $($defaultParam = (typeof $defaultParam === "undefined") ? $defaultVal : $defaultParam) (;) ...
           $methodBody ...
         }
       };
     } else {
       return #{
-        $className.prototype.$methodName = function($methodParam (,) ...) {
+        $className.prototype.$methodName = function($methodParam (,) ... $defaultParam (,) ...) {
+          $($defaultParam = (typeof $defaultParam === "undefined") ? $defaultVal : $defaultParam) (;) ...
           $methodBody ...
         };
       };
@@ -183,16 +232,16 @@ macro method {
 }
 
 let function = macro {
-  rule { ( $param:ident (,) ... $($defparam:ident = $defval) (,) ...) { $body ... } } => {
-    (function($param (,) ... $defparam (,) ...) {
-      $($defparam = (typeof $defparam === "undefined") ? $defval : $defparam) (;) ...
+  rule { ($param:ident (,) ... $($defaultParam:ident = $defaultVal) (,) ...) { $body ... } } => {
+    (function($param (,) ... $defaultParam (,) ...) {
+      $($defaultParam = (typeof $defaultParam === "undefined") ? $defaultVal : $defaultParam) (;) ...
       $body ...
     })
   }
 
-  rule { $name( $param:ident (,) ... $($defparam:ident = $defval) (,) ...) { $body ... } } => {
-    function $name($param (,) ... $defparam (,) ...) {
-      $($defparam = (typeof $defparam === "undefined") ? $defval : $defparam) (;) ...
+  rule { $name($param:ident (,) ... $($defaultParam:ident = $defaultVal) (,) ...) { $body ... } } => {
+    function $name($param (,) ... $defaultParam (,) ...) {
+      $($defaultParam = (typeof $defaultParam === "undefined") ? $defaultVal : $defaultParam) (;) ...
       $body ...
     }
   }
